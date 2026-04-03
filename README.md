@@ -99,7 +99,7 @@ http://<alb-dns-name>/docs
 
 Page loads → ✅ Deployment successful
 
-![docs](vx_images/338000401260445.png =871x)
+![docs](vx_images/338000401260445.png)
 
 ## 6. Cleanup (Important)
 
