@@ -24,3 +24,6 @@ dist/
 .idea/
 *.swp
 *.swo
+
+# Terraform
+terraform/.terraform

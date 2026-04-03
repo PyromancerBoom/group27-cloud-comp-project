@@ -9,25 +9,36 @@ def get_redis() -> aioredis.Redis:
     return aioredis.from_url(settings.redis_url, decode_responses=True)
 
 
+def _aws_kwargs(endpoint_url: str | None = None) -> dict:
+    kwargs = {
+        "region_name": settings.aws_region,
+    }
+
+    # Only include explicit credentials if they are provided.
+    # In real AWS, boto3 should use the EC2 instance role automatically.
+    if settings.aws_access_key_id:
+        kwargs["aws_access_key_id"] = settings.aws_access_key_id
+
+    if settings.aws_secret_access_key:
+        kwargs["aws_secret_access_key"] = settings.aws_secret_access_key
+
+    if endpoint_url:
+        kwargs["endpoint_url"] = endpoint_url
+
+    return kwargs
+
+
 @lru_cache
 def get_kinesis_client():
-    kwargs = dict(
-        region_name=settings.aws_region,
-        aws_access_key_id=settings.aws_access_key_id,
-        aws_secret_access_key=settings.aws_secret_access_key,
+    return boto3.client(
+        "kinesis",
+        **_aws_kwargs(settings.kinesis_endpoint_url),
     )
-    if settings.kinesis_endpoint_url:
-        kwargs["endpoint_url"] = settings.kinesis_endpoint_url
-    return boto3.client("kinesis", **kwargs)
 
 
 @lru_cache
 def get_dynamodb_resource():
-    kwargs = dict(
-        region_name=settings.aws_region,
-        aws_access_key_id=settings.aws_access_key_id,
-        aws_secret_access_key=settings.aws_secret_access_key,
+    return boto3.resource(
+        "dynamodb",
+        **_aws_kwargs(settings.dynamodb_endpoint_url),
     )
-    if settings.dynamodb_endpoint_url:
-        kwargs["endpoint_url"] = settings.dynamodb_endpoint_url
-    return boto3.resource("dynamodb", **kwargs)
