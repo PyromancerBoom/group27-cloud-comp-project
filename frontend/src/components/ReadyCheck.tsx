@@ -1,5 +1,15 @@
 import React from "react";
 
+const ACTIVITY_LABELS: Record<string, string> = {
+  gym_spotter:  "Gym Spotter",
+  table_tennis: "Table Tennis",
+  board_game:   "Board Game",
+  badminton:    "Badminton",
+  chess:        "Chess",
+  running:      "Running / Jogging",
+  other:        "Activity Partner",
+};
+
 interface Props {
   lobbyId: string;
   activityType: string;
@@ -9,18 +19,24 @@ interface Props {
 }
 
 export function ReadyCheck({ lobbyId, activityType, members, onAccept, onDecline }: Props) {
+  const label = ACTIVITY_LABELS[activityType] ?? activityType.replace(/_/g, " ");
+  const partnerCount = members.length - 1;
+
   return (
-    <div style={{ background: "#6366f1", color: "#fff", borderRadius: 12, padding: 20, textAlign: "center" }}>
-      <h2>Match Found!</h2>
-      <p>Activity: <strong>{activityType.replace("_", " ")}</strong></p>
-      <p>{members.length} sidekick(s) nearby</p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 16 }}>
-        <button onClick={onAccept} style={{ background: "#fff", color: "#6366f1", padding: "10px 24px", borderRadius: 8, border: "none", fontWeight: 700 }}>
-          Ready!
-        </button>
-        <button onClick={onDecline} style={{ background: "transparent", color: "#fff", padding: "10px 24px", borderRadius: 8, border: "1px solid #fff" }}>
-          Cancel
-        </button>
+    <div className="modal-overlay">
+      <div className="modal-card ready-check">
+        <div className="ready-activity-badge">{label}</div>
+        <div className="ready-h">Match Found!</div>
+        <div className="ready-sub">
+          {partnerCount > 0
+            ? `${partnerCount} sidekick${partnerCount > 1 ? "s" : ""} nearby and ready.`
+            : "A sidekick is nearby and ready."}
+          <br />Confirm to connect and find each other.
+        </div>
+        <div className="ready-btns">
+          <button className="ready-accept" onClick={onAccept}>Ready!</button>
+          <button className="ready-decline" onClick={onDecline}>Cancel</button>
+        </div>
       </div>
     </div>
   );

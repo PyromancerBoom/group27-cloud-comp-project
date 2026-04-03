@@ -17,8 +17,18 @@ export async function postPing(body: {
   return res.json();
 }
 
-export async function getNearbyPings(lat: number, lon: number, radius = 10) {
+export async function getNearbyPings(lat: number, lon: number, radius = 100) {
   const res = await fetch(`${API_URL}/pings/nearby?lat=${lat}&lon=${lon}&radius=${radius}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function joinLobby(lobbyId: string, userId: string) {
+  const res = await fetch(`${API_URL}/lobbies/${lobbyId}/join`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ user_id: userId }),
+  });
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

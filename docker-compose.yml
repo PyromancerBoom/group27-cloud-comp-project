@@ -10,8 +10,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-      dynamodb-local:
-        condition: service_healthy
 
   redis:
     image: redis:7-alpine
@@ -29,10 +27,11 @@ services:
       - "8001:8000"
     command: ["-jar", "DynamoDBLocal.jar", "-sharedDb", "-inMemory"]
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8000/shell || exit 1"]
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/localhost/8000' 2>/dev/null && exit 0 || exit 1"]
       interval: 5s
-      timeout: 3s
-      retries: 10
+      timeout: 5s
+      retries: 15
+      start_period: 10s
 
   dynamodb-init:
     image: amazon/aws-cli:latest
