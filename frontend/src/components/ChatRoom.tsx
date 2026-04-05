@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, KeyboardEvent } from "react";
 
 export interface ChatMessage {
   user_id: string;
@@ -25,7 +25,7 @@ const ACTIVITY_LABELS: Record<string, string> = {
   other: "Other",
 };
 
-export function ChatRoom({ lobbyId, currentUserId, activityType, messages, onSend, onClose }: Props) {
+export function ChatRoom({ currentUserId, activityType, messages, onSend, onClose }: Props) {
   const [draft, setDraft] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -40,7 +40,7 @@ export function ChatRoom({ lobbyId, currentUserId, activityType, messages, onSen
     setDraft("");
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleSend();
   };
 

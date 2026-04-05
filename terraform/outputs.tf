@@ -52,3 +52,40 @@ output "analytics_archive_bucket" {
   description = "S3 bucket for analytics archive"
   value       = aws_s3_bucket.analytics_archive.bucket
 }
+
+output "frontend_pwa_url" {
+  description = "Public URL for the Frontend PWA"
+  value       = "https://${aws_cloudfront_distribution.frontend_pwa.domain_name}"
+}
+
+output "admin_dashboard_url" {
+  description = "Public URL for the Admin Dashboard"
+  value       = "https://${aws_cloudfront_distribution.admin_dashboard.domain_name}"
+}
+
+output "frontend_pwa_bucket" {
+  description = "S3 bucket name for the Frontend PWA"
+  value       = aws_s3_bucket.frontend_pwa.bucket
+}
+
+output "admin_dashboard_bucket" {
+  description = "S3 bucket name for the Admin Dashboard"
+  value       = aws_s3_bucket.admin_dashboard.bucket
+}
+
+output "vite_api_url" {
+  description = "The backend URL for frontend environment variables"
+  value       = "http://${aws_lb.this.dns_name}"
+}
+
+output "deployment_instructions" {
+  description = "Helper commands for deployment"
+  value = <<EOT
+To deploy the frontend:
+1. Create .env.production in frontend/ and dashboard/ with:
+   VITE_API_URL=http://${aws_lb.this.dns_name}
+2. Build: npm run build
+3. Sync PWA: aws s3 sync ./frontend/dist s3://${aws_s3_bucket.frontend_pwa.bucket} --delete
+4. Sync Dashboard: aws s3 sync ./dashboard/dist s3://${aws_s3_bucket.admin_dashboard.bucket} --delete
+EOT
+}

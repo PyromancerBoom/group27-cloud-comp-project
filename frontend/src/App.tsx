@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PingForm } from "./components/PingForm";
 import { LobbyList } from "./components/LobbyList";
 import { ReadyCheck } from "./components/ReadyCheck";
