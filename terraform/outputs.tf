@@ -52,3 +52,13 @@ output "analytics_archive_bucket" {
   description = "S3 bucket for analytics archive"
   value       = aws_s3_bucket.analytics_archive.bucket
 }
+
+output "analytics_lambda_function_name" {
+  description = "Analytics Lambda function name"
+  value       = aws_lambda_function.analytics_aggregator.function_name
+}
+
+output "analytics_lambda_function_arn" {
+  description = "Analytics Lambda function ARN"
+  value       = aws_lambda_function.analytics_aggregator.arn
+}

@@ -142,9 +142,50 @@ variable "common_tags" {
   default     = {}
 }
 
-
 variable "github_branch" {
   description = "Git branch to deploy from GitHub"
   type        = string
   default     = "main"
+}
+
+variable "analytics_lambda_function_name" {
+  description = "Name of the analytics aggregation Lambda function."
+  type        = string
+  default     = "need-a-sidekick-dev-analytics-aggregator"
+}
+
+variable "analytics_lambda_handler" {
+  description = "Handler entrypoint for the analytics Lambda."
+  type        = string
+  default     = "handler.lambda_handler"
+}
+
+variable "analytics_lambda_runtime" {
+  description = "Runtime for the analytics Lambda."
+  type        = string
+  default     = "python3.11"
+}
+
+variable "analytics_lambda_zip_path" {
+  description = "Path to the built Lambda zip, relative to the terraform directory."
+  type        = string
+  default     = "../lambda/dist/analytics_lambda.zip"
+}
+
+variable "analytics_lambda_timeout" {
+  description = "Timeout in seconds for the analytics Lambda."
+  type        = number
+  default     = 30
+}
+
+variable "analytics_lambda_memory_size" {
+  description = "Memory size in MB for the analytics Lambda."
+  type        = number
+  default     = 256
+}
+
+variable "analytics_lambda_batch_size" {
+  description = "Number of Kinesis records to batch per Lambda invocation."
+  type        = number
+  default     = 100
 }
