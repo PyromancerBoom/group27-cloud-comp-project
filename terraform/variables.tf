@@ -189,3 +189,33 @@ variable "analytics_lambda_batch_size" {
   type        = number
   default     = 100
 }
+
+variable "analytics_firehose_buffering_size" {
+  description = "Firehose buffer size in MB before delivering to S3"
+  type        = number
+  default     = 5
+}
+
+variable "analytics_firehose_buffering_interval" {
+  description = "Firehose buffer interval in seconds before delivering to S3"
+  type        = number
+  default     = 300
+}
+
+variable "analytics_firehose_compression_format" {
+  description = "Compression format for Firehose S3 delivery"
+  type        = string
+  default     = "GZIP"
+}
+
+variable "analytics_firehose_s3_prefix" {
+  description = "S3 prefix for successful Firehose deliveries"
+  type        = string
+  default     = "analytics/raw/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/"
+}
+
+variable "analytics_firehose_error_output_prefix" {
+  description = "S3 prefix for failed Firehose deliveries"
+  type        = string
+  default     = "analytics/raw-errors/!{firehose:error-output-type}/year=!{timestamp:yyyy}/month=!{timestamp:MM}/day=!{timestamp:dd}/"
+}

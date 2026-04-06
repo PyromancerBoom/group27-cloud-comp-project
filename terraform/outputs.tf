@@ -62,3 +62,13 @@ output "analytics_lambda_function_arn" {
   description = "Analytics Lambda function ARN"
   value       = aws_lambda_function.analytics_aggregator.arn
 }
+
+output "firehose_delivery_stream_name" {
+  description = "Analytics Firehose delivery stream name"
+  value       = aws_kinesis_firehose_delivery_stream.analytics_archive.name
+}
+
+output "firehose_delivery_stream_arn" {
+  description = "Analytics Firehose delivery stream ARN"
+  value       = aws_kinesis_firehose_delivery_stream.analytics_archive.arn
+}
