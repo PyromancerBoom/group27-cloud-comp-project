@@ -82,7 +82,7 @@ async def _eval_join_lobby(
             return await redis_client.eval(JOIN_LOBBY_LUA, 2, *args)
 
 
-async def find_or_create_lobby(
+async def create_lobby(
     redis_client: aioredis.Redis,
     user_id: str,
     activity_type: str,
@@ -93,7 +93,8 @@ async def find_or_create_lobby(
     message: str,
 ) -> dict:
     """
-    Returns a dict with keys: lobby_id, status ('waiting'|'matched'), members list.
+    Search for a compatible nearby lobby and join it atomically; if none found,
+    create a new one. Returns a dict with keys: lobby_id, status, members list.
     """
     # Search for compatible lobbies within radius
     nearby = await redis_client.geosearch(

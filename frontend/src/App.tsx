@@ -1,31 +1,27 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { PingForm } from "./components/PingForm";
 import { LobbyList } from "./components/LobbyList";
-import { ReadyCheck } from "./components/ReadyCheck";
 import { NearbyPage } from "./components/NearbyPage";
 import { ChatRoom, ChatMessage } from "./components/ChatRoom";
+import { PingDetailModal } from "./components/PingDetailModal";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useWebSocket } from "./hooks/useWebSocket";
-import { getNearbyPings, joinLobby } from "./api/client";
+import { getNearbyPings, getLobby, deleteLobby } from "./api/client";
 
-const USER_ID = (() => {
-  const key = "nas_user_id";
-  let id = localStorage.getItem(key);
-  if (!id) { id = crypto.randomUUID(); localStorage.setItem(key, id); }
-  return id;
-})();
+const USER_ID = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 type Page = "home" | "nearby";
 
 export default function App() {
   const { coords, error: geoError } = useGeolocation();
   const [lobbies, setLobbies] = useState<any[]>([]);
-  const [matchEvent, setMatchEvent] = useState<any>(null);
   const [activeLobbyId, setActiveLobbyId] = useState<string | null>(null);
   const [showPingModal, setShowPingModal] = useState(false);
+  const [pingBlockedMsg, setPingBlockedMsg] = useState(false);
   const [page, setPage] = useState<Page>("home");
   const [chatLobbyId, setChatLobbyId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [selectedLobby, setSelectedLobby] = useState<any | null>(null);
   const chatLobbyIdRef = useRef<string | null>(null);
 
   const openChat = useCallback((lobbyId: string) => {
@@ -42,12 +38,12 @@ export default function App() {
 
   const handleWsMessage = useCallback((msg: any) => {
     if (msg.type === "match_formed") {
-      setMatchEvent(msg.payload);
       openChat(msg.payload.lobby_id);
     }
     if (msg.type === "lobby_update") setLobbies((prev) => [...prev]);
     if (msg.type === "chat_message") {
-      if (chatLobbyIdRef.current) {
+      // Skip own messages — they are added locally in handleChatSend
+      if (chatLobbyIdRef.current && msg.payload.user_id !== USER_ID) {
         setChatMessages((prev) => [...prev, msg.payload]);
       }
     }
@@ -76,40 +72,55 @@ export default function App() {
     refreshLobbies();
   };
 
-  const handleEnterChat = useCallback((lobbyId: string) => {
+  const handlePingClick = useCallback(async (lobbyId: string) => {
+    const cached = lobbies.find((l) => l.lobby_id === lobbyId);
+    let lobby = cached;
+    if (!lobby) {
+      try { lobby = await getLobby(lobbyId); } catch { return; }
+    }
+    // Creator or already-joined: go straight to chat
+    if (lobby.creator_id === USER_ID || activeLobbyId === lobbyId) {
+      openChat(lobbyId);
+    } else {
+      setSelectedLobby(lobby);
+    }
+  }, [lobbies, activeLobbyId, openChat]);
+
+  const handleModalJoinSuccess = useCallback((lobbyId: string, result: any) => {
+    setActiveLobbyId(lobbyId);
+    send({ type: "subscribe_lobby", lobby_id: lobbyId });
+    setSelectedLobby(null);
     openChat(lobbyId);
-  }, [openChat]);
+    refreshLobbies();
+  }, [send, openChat, refreshLobbies]);
 
   const handleChatSend = useCallback((text: string) => {
-    if (chatLobbyIdRef.current) {
-      send({ type: "chat", lobby_id: chatLobbyIdRef.current, text });
-    }
+    if (!chatLobbyIdRef.current) return;
+    send({ type: "chat", lobby_id: chatLobbyIdRef.current, text });
+    // Add own message locally so it appears immediately with correct user_id
+    setChatMessages((prev) => [...prev, {
+      user_id: USER_ID,
+      text,
+      timestamp: new Date().toISOString(),
+    }]);
   }, [send]);
 
-  const handleJoinLobby = async (lobbyId: string) => {
-    try {
-      const result = await joinLobby(lobbyId, USER_ID);
-      setActiveLobbyId(lobbyId);
-      send({ type: "subscribe_lobby", lobby_id: lobbyId });
-      openChat(lobbyId);
-      if (result.status === "matched") {
-        setMatchEvent({ lobby_id: lobbyId, activity_type: result.activity_type ?? "", members: result.members });
-      }
-      refreshLobbies();
-    } catch {
-      refreshLobbies();
+  const handleOpenPingForm = useCallback(() => {
+    if (activeLobbyId) {
+      setPingBlockedMsg(true);
+      setTimeout(() => setPingBlockedMsg(false), 3000);
+    } else {
+      setShowPingModal(true);
     }
-  };
+  }, [activeLobbyId]);
 
-  const handleReadyAccept = () => {
-    if (activeLobbyId) send({ type: "ready_check_response", lobby_id: activeLobbyId, accepted: true });
-    setMatchEvent(null);
-  };
-  const handleReadyDecline = () => {
-    if (activeLobbyId) send({ type: "ready_check_response", lobby_id: activeLobbyId, accepted: false });
-    setMatchEvent(null);
-    setActiveLobbyId(null);
-  };
+  const handleDeleteLobby = useCallback(async (lobbyId: string) => {
+    try {
+      await deleteLobby(lobbyId, USER_ID);
+      if (activeLobbyId === lobbyId) setActiveLobbyId(null);
+      refreshLobbies();
+    } catch {}
+  }, [activeLobbyId, refreshLobbies]);
 
   const locState = geoError ? "error" : coords ? "ready" : "locating";
   const locText = geoError ? "location unavailable" : coords ? "live · hyper-local · 10m radius" : "locating you...";
@@ -148,10 +159,11 @@ export default function App() {
           <NearbyPage
             coords={coords}
             currentUserId={USER_ID}
+            activeLobbyId={activeLobbyId}
             onBack={openHome}
-            onJoin={handleJoinLobby}
-            onEnterChat={handleEnterChat}
-            onOpenPingForm={() => setShowPingModal(true)}
+            onPingClick={handlePingClick}
+            onDelete={handleDeleteLobby}
+            onOpenPingForm={handleOpenPingForm}
           />
         </div>
       ) : (
@@ -171,7 +183,7 @@ export default function App() {
               No accounts, no scheduling — just spontaneous activity.
             </p>
             <div className="hero-btns">
-              <button className="btn-primary" onClick={() => setShowPingModal(true)}>
+              <button className="btn-primary" onClick={handleOpenPingForm}>
                 post a ping →
               </button>
               <button className="btn-secondary" onClick={openNearby}>
@@ -232,9 +244,10 @@ export default function App() {
                 <LobbyList
                   lobbies={lobbies}
                   currentUserId={USER_ID}
-                  onJoin={handleJoinLobby}
-                  onEnterChat={handleEnterChat}
-                  onOpenPingForm={() => setShowPingModal(true)}
+                  activeLobbyId={activeLobbyId}
+                  onPingClick={handlePingClick}
+                  onDelete={handleDeleteLobby}
+                  onOpenPingForm={handleOpenPingForm}
                 />
               </div>
             </div>
@@ -318,7 +331,7 @@ export default function App() {
                 { label: "Jogging Partner", meta: "fitness · parks",         color: "g", badge: "live" },
                 { label: "Chess",           meta: "games · cafes",           color: "p", badge: "popular" },
               ].map((a) => (
-                <div className="act-card" key={a.label} style={{ cursor: "pointer" }} onClick={() => setShowPingModal(true)}>
+                <div className="act-card" key={a.label} style={{ cursor: "pointer" }} onClick={handleOpenPingForm}>
                   <div className={`act-ico ${a.color}`}>
                     {a.color === "g" ? "🏋️" : a.color === "a" ? "🏓" : a.color === "r" ? "🏸" : "♟️"}
                   </div>
@@ -338,7 +351,7 @@ export default function App() {
             <p className="cta-sub">
               No account. No app download. Just open the page, post a ping, and see who's around. Takes 10 seconds.
             </p>
-            <button className="btn-primary btn-lg" onClick={() => setShowPingModal(true)}>
+            <button className="btn-primary btn-lg" onClick={handleOpenPingForm}>
               find a sidekick now →
             </button>
             <div className="cta-note">anonymous · free · pings expire in 15 min</div>
@@ -353,6 +366,11 @@ export default function App() {
         </div>
       )}
 
+      {/* ── ACTIVE PING TOAST ── */}
+      {pingBlockedMsg && (
+        <div className="ping-blocked-toast">you already have an active ping</div>
+      )}
+
       {/* ── GLOBAL MODALS ── */}
       {showPingModal && (
         <PingForm
@@ -360,6 +378,14 @@ export default function App() {
           coords={coords}
           onPingCreated={handlePingCreated}
           onClose={() => setShowPingModal(false)}
+        />
+      )}
+      {selectedLobby && (
+        <PingDetailModal
+          lobby={selectedLobby}
+          currentUserId={USER_ID}
+          onJoinSuccess={handleModalJoinSuccess}
+          onClose={() => setSelectedLobby(null)}
         />
       )}
       {chatLobbyId && (
@@ -370,15 +396,6 @@ export default function App() {
           messages={chatMessages}
           onSend={handleChatSend}
           onClose={handleCloseChat}
-        />
-      )}
-      {matchEvent && (
-        <ReadyCheck
-          lobbyId={matchEvent.lobby_id}
-          activityType={matchEvent.activity_type}
-          members={matchEvent.members ?? []}
-          onAccept={handleReadyAccept}
-          onDecline={handleReadyDecline}
         />
       )}
     </>

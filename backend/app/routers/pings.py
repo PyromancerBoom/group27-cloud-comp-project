@@ -14,7 +14,7 @@ router = APIRouter(prefix="/pings", tags=["pings"])
 
 @router.post("", response_model=PingResponse, status_code=201)
 async def create_ping(body: PingCreate, redis=Depends(get_redis)):
-    result = await matching.find_or_create_lobby(
+    result = await matching.create_lobby(
         redis,
         user_id=body.user_id,
         activity_type=body.activity_type,

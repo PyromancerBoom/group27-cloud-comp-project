@@ -60,16 +60,16 @@ function CountdownTimer({ expiresAt }: { expiresAt: string }) {
 interface Props {
   coords: { lat: number; lon: number } | null;
   currentUserId: string;
+  activeLobbyId: string | null;
   onBack: () => void;
-  onJoin: (lobbyId: string) => Promise<void>;
-  onEnterChat: (lobbyId: string) => void;
+  onPingClick: (lobbyId: string) => void;
+  onDelete: (lobbyId: string) => void;
   onOpenPingForm: () => void;
 }
 
-export function NearbyPage({ coords, currentUserId, onBack, onJoin, onEnterChat, onOpenPingForm }: Props) {
+export function NearbyPage({ coords, currentUserId, activeLobbyId, onBack, onPingClick, onDelete, onOpenPingForm }: Props) {
   const [lobbies, setLobbies] = useState<any[]>([]);
   const [filter, setFilter] = useState("all");
-  const [joining, setJoining] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
@@ -90,14 +90,12 @@ export function NearbyPage({ coords, currentUserId, onBack, onJoin, onEnterChat,
     return () => clearInterval(id);
   }, [refresh]);
 
-  const handleJoin = async (lobbyId: string) => {
-    setJoining(lobbyId);
-    try { await onJoin(lobbyId); } finally { setJoining(null); }
-  };
-
-  const filtered = filter === "all"
-    ? lobbies
-    : lobbies.filter((l) => l.activity_type === filter);
+  const filtered = (filter === "all" ? lobbies : lobbies.filter((l) => l.activity_type === filter))
+    .filter((l) => {
+      const isFull = parseInt(l.current) >= parseInt(l.capacity);
+      const isMember = l.creator_id === currentUserId || activeLobbyId === l.lobby_id;
+      return !isFull || isMember;
+    });
 
   const locText = coords
     ? `${filtered.length} ping${filtered.length !== 1 ? "s" : ""} nearby`
@@ -145,14 +143,17 @@ export function NearbyPage({ coords, currentUserId, onBack, onJoin, onEnterChat,
           filtered.map((lobby) => {
             const color = ACTIVITY_COLOR[lobby.activity_type] ?? "g";
             const label = ACTIVITY_LABELS[lobby.activity_type] ?? lobby.activity_type.replace(/_/g, " ");
-            const isMine = lobby.creator_id === currentUserId;
-            const isFull = lobby.current >= lobby.capacity;
             const dist = !lobby.distance_meters || lobby.distance_meters < 1
               ? "nearby"
               : `~${Math.round(lobby.distance_meters)}m away`;
 
             return (
-              <div className="nearby-card" key={lobby.lobby_id}>
+              <div
+                className="nearby-card clickable"
+                key={lobby.lobby_id}
+                onClick={() => onPingClick(lobby.lobby_id)}
+                style={{ cursor: "pointer" }}
+              >
                 <div className={`nearby-card-ico ${color}`}>
                   {ACTIVITY_ICON[lobby.activity_type] ?? "⚡"}
                 </div>
@@ -168,21 +169,12 @@ export function NearbyPage({ coords, currentUserId, onBack, onJoin, onEnterChat,
                   <div className="nearby-card-timer">
                     <CountdownTimer expiresAt={lobby.expires_at} />
                   </div>
-                  {isMine ? (
+                  {lobby.creator_id === currentUserId && (
                     <button
-                      className="nearby-card-join"
-                      onClick={() => onEnterChat(lobby.lobby_id)}
-                    >
-                      chat →
-                    </button>
-                  ) : (
-                    <button
-                      className="nearby-card-join"
-                      onClick={() => handleJoin(lobby.lobby_id)}
-                      disabled={isFull || joining === lobby.lobby_id}
-                    >
-                      {joining === lobby.lobby_id ? "joining..." : isFull ? "full" : "join →"}
-                    </button>
+                      className="ping-delete-btn"
+                      onClick={(e) => { e.stopPropagation(); onDelete(lobby.lobby_id); }}
+                      title="Delete ping"
+                    >✕</button>
                   )}
                 </div>
               </div>

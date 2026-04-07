@@ -568,17 +568,23 @@ body {
   border-radius: 20px; padding: 4px 12px;
 }
 .chat-messages {
-  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
   padding: 4px 0 12px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;
 }
-.chat-msg { display: flex; flex-direction: column; gap: 2px; }
-.chat-msg.mine { align-items: flex-end; }
-.chat-msg-bubble {
-  background: var(--surface-2); border: 0.5px solid var(--border);
-  border-radius: 10px; padding: 8px 12px; font-size: 14px; color: var(--text);
-  max-width: 80%; word-break: break-word;
+.chat-msg {
+  display: flex; flex-direction: column; gap: 3px;
+  max-width: 72%; align-self: flex-start;
 }
-.chat-msg.mine .chat-msg-bubble { background: rgba(29,158,117,0.18); border-color: var(--accent-border); }
+.chat-msg.mine { align-self: flex-end; align-items: flex-end; }
+.chat-msg-bubble {
+  background: rgba(255,255,255,0.07); border: 0.5px solid var(--border);
+  border-radius: 16px 16px 16px 4px;
+  padding: 9px 13px; font-size: 14px; color: var(--text); word-break: break-word;
+}
+.chat-msg.mine .chat-msg-bubble {
+  background: rgba(29,158,117,0.25); border-color: rgba(29,158,117,0.45);
+  color: #e8faf4; border-radius: 16px 16px 4px 16px;
+}
 .chat-msg-meta { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); padding: 0 4px; }
 .chat-input-row { display: flex; gap: 8px; margin-top: 8px; }
 .chat-input {
@@ -654,6 +660,46 @@ body {
   cursor: pointer; transition: all 0.15s; margin-bottom: 28px;
 }
 .nearby-refresh:hover { border-color: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
+
+/* ── PING DETAIL MODAL ── */
+.ping-detail-modal { max-width: 400px; padding: 32px; }
+.ping-detail-header {
+  display: flex; align-items: center; gap: 16px; margin-bottom: 24px;
+}
+.ping-detail-ico {
+  width: 52px; height: 52px; border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; font-size: 24px;
+}
+.ping-detail-ico.g { background: #0F6E56; }
+.ping-detail-ico.a { background: #633806; }
+.ping-detail-ico.p { background: #3C3489; }
+.ping-detail-ico.r { background: #791F1F; }
+.ping-detail-title { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 5px; }
+.ping-detail-meta  { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+.ping-detail-actions { display: flex; flex-direction: column; gap: 10px; }
+.ping-detail-notice {
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+  text-align: center; padding: 8px 0;
+}
+.ping-detail-error {
+  font-family: var(--font-mono); font-size: 11px; color: #E24B4A;
+  text-align: center;
+}
+.nearby-card.clickable:hover { border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.03); }
+.ping-delete-btn {
+  background: none; border: none; color: var(--text-dim); font-size: 11px;
+  padding: 2px 5px; cursor: pointer; border-radius: 4px; line-height: 1; flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
+}
+.ping-delete-btn:hover { color: #E24B4A; background: rgba(226,75,74,0.12); }
+.ping-blocked-toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 0.5px solid var(--border);
+  padding: 10px 20px; border-radius: 8px; z-index: 400;
+  font-family: var(--font-mono); font-size: 12px; color: var(--text-muted);
+  white-space: nowrap; pointer-events: none;
+}
 
 /* ── RESPONSIVE ── */
 @media (min-width: 1600px) {
