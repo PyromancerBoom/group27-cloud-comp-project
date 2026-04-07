@@ -72,3 +72,28 @@ output "firehose_delivery_stream_arn" {
   description = "Analytics Firehose delivery stream ARN"
   value       = aws_kinesis_firehose_delivery_stream.analytics_archive.arn
 }
+
+output "static_website_url" {
+  description = "S3 static website endpoint for frontend and dashboard"
+  value       = "http://${aws_s3_bucket_website_configuration.static.website_endpoint}"
+}
+
+output "cloudfront_url" {
+  description = "CloudFront HTTPS URL for the frontend (use this)"
+  value       = "https://${aws_cloudfront_distribution.static.domain_name}"
+}
+
+output "cloudfront_domain" {
+  description = "Bare CloudFront domain name (used for wss:// WebSocket URL)"
+  value       = aws_cloudfront_distribution.static.domain_name
+}
+
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID (used for cache invalidation)"
+  value       = aws_cloudfront_distribution.static.id
+}
+
+output "static_bucket_name" {
+  description = "S3 bucket name for static assets"
+  value       = aws_s3_bucket.static.bucket
+}

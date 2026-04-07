@@ -8,7 +8,7 @@ import { useGeolocation } from "./hooks/useGeolocation";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { getNearbyPings, getLobby, deleteLobby } from "./api/client";
 
-const USER_ID = crypto.randomUUID();;
+const USER_ID = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
 type Page = "home" | "nearby";
 
