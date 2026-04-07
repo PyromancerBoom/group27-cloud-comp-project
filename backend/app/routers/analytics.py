@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from app.dependencies import get_dynamodb_resource
 from app.config import settings
 
@@ -13,10 +13,22 @@ async def get_summary(
     dynamo=Depends(get_dynamodb_resource),
 ):
     table = dynamo.Table(settings.dynamodb_table_name)
-    # Simple scan — for production use a GSI or pre-aggregated keys
-    kwargs = {}
+
+    filter_parts = []
+    expr_values = {}
+
     if activity_type:
-        kwargs["FilterExpression"] = "contains(pk, :at)"
-        kwargs["ExpressionAttributeValues"] = {":at": activity_type}
+        filter_parts.append("contains(pk, :at)")
+        expr_values[":at"] = activity_type
+
+    if hour_prefix:
+        filter_parts.append("begins_with(sk, :hp)")
+        expr_values[":hp"] = f"HOUR#{hour_prefix}"
+
+    kwargs = {}
+    if filter_parts:
+        kwargs["FilterExpression"] = " AND ".join(filter_parts)
+        kwargs["ExpressionAttributeValues"] = expr_values
+
     resp = table.scan(**kwargs)
     return {"items": resp.get("Items", []), "count": resp.get("Count", 0)}
