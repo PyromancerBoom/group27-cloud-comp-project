@@ -1,10 +1,10 @@
+import asyncio
 import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_redis
 from app.services.matching import GEO_KEY, _eval_join_lobby
 from app.services import chat as chat_service
-from app.services.connection_manager import manager
 
 router = APIRouter(prefix="/lobbies", tags=["lobbies"])
 
@@ -57,8 +57,10 @@ async def join_lobby(lobby_id: str, body: JoinRequest, redis=Depends(get_redis))
                 "members": members,
             },
         }
-        for member_id in members:
-            await chat_service.publish_to_user(redis, member_id, notification)
+        await asyncio.gather(
+            *(chat_service.publish_to_user(redis, mid, notification) for mid in members),
+            return_exceptions=True,
+        )
 
     return {
         "lobby_id": lobby_id,

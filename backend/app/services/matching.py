@@ -13,6 +13,7 @@ import logging
 import uuid
 from datetime import datetime, timezone, timedelta
 import redis.asyncio as aioredis
+from redis.exceptions import NoScriptError
 from app.config import settings
 
 log = logging.getLogger(__name__)
@@ -71,12 +72,12 @@ async def _eval_join_lobby(
 
     try:
         return await redis_client.evalsha(_JOIN_LOBBY_SHA, 2, *args)
-    except aioredis.exceptions.NoScriptError:
+    except NoScriptError:
         log.warning("NOSCRIPT: reloading JOIN_LOBBY_LUA")
         _JOIN_LOBBY_SHA = await redis_client.script_load(JOIN_LOBBY_LUA)
         try:
             return await redis_client.evalsha(_JOIN_LOBBY_SHA, 2, *args)
-        except aioredis.exceptions.NoScriptError:
+        except NoScriptError:
             log.error("EVALSHA failed twice; falling back to EVAL")
             _JOIN_LOBBY_SHA = None
             return await redis_client.eval(JOIN_LOBBY_LUA, 2, *args)

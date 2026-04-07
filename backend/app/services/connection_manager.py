@@ -21,6 +21,10 @@ class ConnectionManager:
         self._stop_events: Dict[str, asyncio.Event] = {}
 
     async def connect(self, user_id: str, ws: WebSocket, redis: aioredis.Redis):
+        # Cancel any existing subscription for this user before registering the new socket,
+        # so stale tasks don't keep running and attempting to send to an old WebSocket.
+        await self.disconnect(user_id)
+
         await ws.accept()
         self._connections[user_id] = ws
 

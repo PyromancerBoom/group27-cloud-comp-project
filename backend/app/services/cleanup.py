@@ -1,6 +1,6 @@
 """
-The clean up service subscribe to redis keyspace expiration events and kill
-ghost entries from lobbies:geo, then emit a ping_expired analytics event
+The cleanup service subscribes to Redis keyspace expiration events, removes
+ghost entries from lobbies:geo, and emits a ping_expired analytics event.
 """
 import asyncio
 import logging
