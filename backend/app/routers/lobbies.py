@@ -1,6 +1,8 @@
+import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_redis
+from app.config import settings
 from app.services.matching import GEO_KEY, JOIN_LOBBY_LUA
 from app.services import chat as chat_service
 from app.services.connection_manager import manager
@@ -10,6 +12,14 @@ router = APIRouter(prefix="/lobbies", tags=["lobbies"])
 
 class JoinRequest(BaseModel):
     user_id: str
+
+
+@router.get("/{lobby_id}/messages")
+async def get_messages(lobby_id: str, redis=Depends(get_redis)):
+    raw = await redis.lrange(f"chat:{lobby_id}", 0, -1)
+    # we reverse for latest msgs first
+    messages = [json.loads(m) for m in reversed(raw)]
+    return {"lobby_id": lobby_id, "messages": messages, "count": len(messages)}
 
 
 @router.get("/{lobby_id}")
@@ -32,7 +42,7 @@ async def join_lobby(lobby_id: str, body: JoinRequest, redis=Depends(get_redis))
     result = await redis.eval(
         JOIN_LOBBY_LUA, 2,
         lobby_key, GEO_KEY,
-        lobby_id, body.user_id,
+        lobby_id, body.user_id, settings.lobby_ttl_seconds,
     )
     status_str, new_count = result
     if status_str == "not_found":

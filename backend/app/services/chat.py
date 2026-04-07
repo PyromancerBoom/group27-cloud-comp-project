@@ -24,7 +24,14 @@ def user_channel(user_id: str) -> str:
 
 
 async def publish_message(redis_client: aioredis.Redis, lobby_id: str, payload: dict):
-    await redis_client.publish(channel_name(lobby_id), json.dumps(payload))
+    data = json.dumps(payload)
+    await redis_client.publish(channel_name(lobby_id), data)
+    chat_key = f"chat:{lobby_id}"
+    pipe = redis_client.pipeline()
+    pipe.lpush(chat_key, data)
+    pipe.ltrim(chat_key, 0, 199)
+    pipe.expire(chat_key, 3600)
+    await pipe.execute()
 
 
 async def publish_to_user(redis_client: aioredis.Redis, user_id: str, payload: dict):

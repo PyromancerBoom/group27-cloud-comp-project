@@ -12,11 +12,13 @@ from app.config import settings
 GEO_KEY = "lobbies:geo"
 
 # Lua: atomically join lobby if not full, return ("joined"|"full"|"not_found"), new_count
+# Also writes user:{user_id}:lobby reverse-lookup key with TTL from ARGV[3].
 JOIN_LOBBY_LUA = """
-local lobby_key = KEYS[1]
-local geo_key   = KEYS[2]
-local lobby_id  = ARGV[1]
-local user_id   = ARGV[2]
+local lobby_key  = KEYS[1]
+local geo_key    = KEYS[2]
+local lobby_id   = ARGV[1]
+local user_id    = ARGV[2]
+local lobby_ttl  = tonumber(ARGV[3])
 
 local capacity = tonumber(redis.call('HGET', lobby_key, 'capacity'))
 if not capacity then return {'not_found', 0} end
@@ -26,6 +28,7 @@ if current >= capacity then return {'full', current} end
 
 local new_count = redis.call('HINCRBY', lobby_key, 'current', 1)
 redis.call('SADD', lobby_key .. ':members', user_id)
+redis.call('SET', 'user:' .. user_id .. ':lobby', lobby_id, 'EX', lobby_ttl)
 
 if new_count >= capacity then
     -- Remove from geo index so no more joins
@@ -66,7 +69,7 @@ async def find_or_create_lobby(
         result = await redis_client.eval(
             JOIN_LOBBY_LUA, 2,
             lobby_key, GEO_KEY,
-            candidate_id, user_id,
+            candidate_id, user_id, settings.lobby_ttl_seconds,
         )
         status_str, new_count = result
 
@@ -102,6 +105,7 @@ async def find_or_create_lobby(
     pipe.sadd(f"{lobby_key}:members", user_id)
     pipe.expire(f"{lobby_key}:members", settings.lobby_ttl_seconds)
     pipe.geoadd(GEO_KEY, [lon, lat, lobby_id])
+    pipe.set(f"user:{user_id}:lobby", lobby_id, ex=settings.lobby_ttl_seconds)
     await pipe.execute()
 
     return {
