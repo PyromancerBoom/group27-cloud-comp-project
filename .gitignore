@@ -31,3 +31,6 @@ terraform/.terraform
 # Lambda build artifacts
 lambda/build/
 lambda/dist/
+
+# For notes n stuff
+sketchpad/

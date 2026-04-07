@@ -20,7 +20,7 @@ router = APIRouter(tags=["websocket"])
 
 @router.websocket("/ws/{user_id}")
 async def websocket_endpoint(user_id: str, ws: WebSocket, redis=Depends(get_redis)):
-    await manager.connect(user_id, ws)
+    await manager.connect(user_id, ws, redis)
     stop_event = asyncio.Event()
     pubsub_tasks: dict[str, asyncio.Task] = {}
 
@@ -69,4 +69,4 @@ async def websocket_endpoint(user_id: str, ws: WebSocket, redis=Depends(get_redi
         stop_event.set()
         for task in pubsub_tasks.values():
             task.cancel()
-        manager.disconnect(user_id)
+        await manager.disconnect(user_id)

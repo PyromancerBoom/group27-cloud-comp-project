@@ -6,6 +6,7 @@ from app.models.ping import PingCreate, PingResponse
 from app.dependencies import get_redis
 from app.config import settings
 from app.services import matching, events
+from app.services import chat as chat_service
 from app.services.connection_manager import manager
 
 router = APIRouter(prefix="/pings", tags=["pings"])
@@ -33,7 +34,6 @@ async def create_ping(body: PingCreate, redis=Depends(get_redis)):
     )
 
     if result["status"] == "matched":
-        # Notify all matched users via WebSocket
         notification = {
             "type": "match_formed",
             "payload": {
@@ -42,7 +42,8 @@ async def create_ping(body: PingCreate, redis=Depends(get_redis)):
                 "members": result["members"],
             },
         }
-        await manager.broadcast_to(result["members"], notification)
+        for member_id in result["members"]:
+            await chat_service.publish_to_user(redis, member_id, notification)
 
     lobby_data = await redis.hgetall(f"lobby:{lobby_id}")
     expires_at = datetime.fromisoformat(lobby_data["expires_at"])
