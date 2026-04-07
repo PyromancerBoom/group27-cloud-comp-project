@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, Depends, HTTPException
 from datetime import datetime, timezone, timedelta
 import uuid
@@ -6,7 +7,7 @@ from app.models.ping import PingCreate, PingResponse
 from app.dependencies import get_redis
 from app.config import settings
 from app.services import matching, events
-from app.services.connection_manager import manager
+from app.services import chat as chat_service
 
 router = APIRouter(prefix="/pings", tags=["pings"])
 
@@ -33,7 +34,6 @@ async def create_ping(body: PingCreate, redis=Depends(get_redis)):
     )
 
     if result["status"] == "matched":
-        # Notify all matched users via WebSocket
         notification = {
             "type": "match_formed",
             "payload": {
@@ -42,7 +42,10 @@ async def create_ping(body: PingCreate, redis=Depends(get_redis)):
                 "members": result["members"],
             },
         }
-        await manager.broadcast_to(result["members"], notification)
+        await asyncio.gather(
+            *(chat_service.publish_to_user(redis, mid, notification) for mid in result["members"]),
+            return_exceptions=True,
+        )
 
     lobby_data = await redis.hgetall(f"lobby:{lobby_id}")
     expires_at = datetime.fromisoformat(lobby_data["expires_at"])

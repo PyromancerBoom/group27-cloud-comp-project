@@ -1,14 +1,24 @@
+import asyncio
+import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_redis
-from app.services.matching import GEO_KEY, JOIN_LOBBY_LUA
-from app.services.connection_manager import manager
+from app.services.matching import GEO_KEY, _eval_join_lobby
+from app.services import chat as chat_service
 
 router = APIRouter(prefix="/lobbies", tags=["lobbies"])
 
 
 class JoinRequest(BaseModel):
     user_id: str
+
+
+@router.get("/{lobby_id}/messages")
+async def get_messages(lobby_id: str, redis=Depends(get_redis)):
+    raw = await redis.lrange(f"chat:{lobby_id}", 0, -1)
+    # we reverse for latest msgs first
+    messages = [json.loads(m) for m in reversed(raw)]
+    return {"lobby_id": lobby_id, "messages": messages, "count": len(messages)}
 
 
 @router.get("/{lobby_id}")
@@ -28,11 +38,7 @@ async def join_lobby(lobby_id: str, body: JoinRequest, redis=Depends(get_redis))
         raise HTTPException(404, "Lobby not found or expired")
     if creator_id == body.user_id:
         raise HTTPException(403, "Cannot join your own ping")
-    result = await redis.eval(
-        JOIN_LOBBY_LUA, 2,
-        lobby_key, GEO_KEY,
-        lobby_id, body.user_id,
-    )
+    result = await _eval_join_lobby(redis, lobby_key, lobby_id, body.user_id)
     status_str, new_count = result
     if status_str == "not_found":
         raise HTTPException(404, "Lobby not found or expired")
@@ -51,7 +57,10 @@ async def join_lobby(lobby_id: str, body: JoinRequest, redis=Depends(get_redis))
                 "members": members,
             },
         }
-        await manager.broadcast_to(members, notification)
+        await asyncio.gather(
+            *(chat_service.publish_to_user(redis, mid, notification) for mid in members),
+            return_exceptions=True,
+        )
 
     return {
         "lobby_id": lobby_id,
