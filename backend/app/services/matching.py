@@ -106,6 +106,14 @@ async def find_or_create_lobby(
     pipe.expire(f"{lobby_key}:members", settings.lobby_ttl_seconds)
     pipe.geoadd(GEO_KEY, [lon, lat, lobby_id])
     pipe.set(f"user:{user_id}:lobby", lobby_id, ex=settings.lobby_ttl_seconds)
+    # shallow copy of lobby data for metadata lookup
+    pipe.hset(f"lobby_meta:{lobby_id}", mapping={
+        "activity_type": activity_type,
+        "lat": lat,
+        "lon": lon,
+    })
+    # TODO: 10 seconds hardcoded grace for now, can adjust later if needed
+    pipe.expire(f"lobby_meta:{lobby_id}", settings.lobby_ttl_seconds + 10)
     await pipe.execute()
 
     return {
