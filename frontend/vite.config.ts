@@ -7,6 +7,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      workbox: {
+        navigateFallbackDenylist: [/^\/analytics/, /^\/pings/, /^\/lobbies/, /^\/health/, /^\/ws/, /^\/dashboard/],
+      },
       manifest: {
         name: "Need A Sidekick",
         short_name: "Sidekick",
