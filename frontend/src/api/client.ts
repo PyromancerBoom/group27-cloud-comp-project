@@ -23,6 +23,19 @@ export async function getNearbyPings(lat: number, lon: number, radius = 100) {
   return res.json();
 }
 
+export async function getLobby(lobbyId: string) {
+  const res = await fetch(`${API_URL}/lobbies/${lobbyId}`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function deleteLobby(lobbyId: string, userId: string) {
+  const res = await fetch(`${API_URL}/lobbies/${lobbyId}?user_id=${encodeURIComponent(userId)}`, {
+    method: "DELETE",
+  });
+  if (!res.ok && res.status !== 204) throw new Error(await res.text());
+}
+
 export async function joinLobby(lobbyId: string, userId: string) {
   const res = await fetch(`${API_URL}/lobbies/${lobbyId}/join`, {
     method: "POST",

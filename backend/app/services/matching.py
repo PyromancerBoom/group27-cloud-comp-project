@@ -36,7 +36,7 @@ return {'joined', new_count}
 """
 
 
-async def find_or_create_lobby(
+async def create_lobby(
     redis_client: aioredis.Redis,
     user_id: str,
     activity_type: str,
@@ -47,40 +47,8 @@ async def find_or_create_lobby(
     message: str,
 ) -> dict:
     """
-    Returns a dict with keys: lobby_id, status ('waiting'|'matched'), members list.
+    Always creates a new lobby. Returns a dict with keys: lobby_id, status, members list.
     """
-    # Search for compatible lobbies within radius
-    nearby = await redis_client.georadius(
-        GEO_KEY, lon, lat, radius_meters, unit="m",
-        withcoord=True, withdist=True, sort="ASC",
-    )
-
-    for entry in nearby:
-        candidate_id, dist, (clon, clat) = entry
-        lobby_key = f"lobby:{candidate_id}"
-        activity = await redis_client.hget(lobby_key, "activity_type")
-        if activity != activity_type:
-            continue
-
-        # Attempt atomic join
-        result = await redis_client.eval(
-            JOIN_LOBBY_LUA, 2,
-            lobby_key, GEO_KEY,
-            candidate_id, user_id,
-        )
-        status_str, new_count = result
-
-        if status_str in ("joined", "matched"):
-            members = await redis_client.smembers(f"{lobby_key}:members")
-            return {
-                "lobby_id": candidate_id,
-                "status": "matched" if status_str == "matched" else "waiting",
-                "current": int(new_count),
-                "members": list(members),
-            }
-        # "full" or "not_found" — try next candidate
-
-    # No compatible lobby found — create a new one
     lobby_id = str(uuid.uuid4())
     lobby_key = f"lobby:{lobby_id}"
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=settings.lobby_ttl_seconds)

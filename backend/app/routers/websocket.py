@@ -10,6 +10,7 @@ Outgoing messages (server-pushed):
 """
 import asyncio
 import json
+from datetime import datetime, timezone
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from app.dependencies import get_redis
 from app.services.connection_manager import manager
@@ -46,7 +47,12 @@ async def websocket_endpoint(user_id: str, ws: WebSocket, redis=Depends(get_redi
                 if lobby_id and text:
                     payload = {
                         "type": "chat_message",
-                        "payload": {"lobby_id": lobby_id, "user_id": user_id, "text": text},
+                        "payload": {
+                            "lobby_id": lobby_id,
+                            "user_id": user_id,
+                            "text": text,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                        },
                     }
                     await chat_service.publish_message(redis, lobby_id, payload)
 
