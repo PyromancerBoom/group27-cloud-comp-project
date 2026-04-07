@@ -63,7 +63,7 @@ async def _handle_lobby_expired(redis_client: aioredis.Redis, lobby_id: str):
     log.info("cleanup: lobby %s expired, geo removed=%s", lobby_id, removed)
 
     # Emit analytics event
-    events.publish_event(
+    await events.publish_event(
         event_type="ping_expired",
         lobby_id=lobby_id,
         activity_type=activity_type,

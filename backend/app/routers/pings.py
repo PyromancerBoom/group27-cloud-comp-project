@@ -27,7 +27,7 @@ async def create_ping(body: PingCreate, redis=Depends(get_redis)):
 
     lobby_id = result["lobby_id"]
     event_type = "match_formed" if result["status"] == "matched" else "ping_posted"
-    events.publish_event(
+    await events.publish_event(
         event_type, lobby_id, body.activity_type,
         body.location.lat, body.location.lon,
         user_count=result["current"],
