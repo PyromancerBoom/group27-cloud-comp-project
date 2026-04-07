@@ -3,11 +3,22 @@ Matching service: find or create a lobby using Redis geospatial indexing.
 
 The atomic join uses a Lua script to prevent race conditions when multiple
 users attempt to join the same lobby simultaneously.
+
+The script is loaded into Redis on first use via SCRIPT LOAD and subsequent
+calls use EVALSHA (saves re-sending the script body on every request).
+A NOSCRIPT error (e.g. after a Redis restart) triggers a reload + retry;
+if that also fails the call falls back to plain EVAL.
 """
+import logging
 import uuid
 from datetime import datetime, timezone, timedelta
 import redis.asyncio as aioredis
 from app.config import settings
+
+log = logging.getLogger(__name__)
+
+# Cached SHA1 digest of JOIN_LOBBY_LUA, populated on first use.
+_JOIN_LOBBY_SHA: str | None = None
 
 GEO_KEY = "lobbies:geo"
 
@@ -39,6 +50,38 @@ return {'joined', new_count}
 """
 
 
+async def _eval_join_lobby(
+    redis_client: aioredis.Redis,
+    lobby_key: str,
+    lobby_id: str,
+    user_id: str,
+):
+    """
+    Execute JOIN_LOBBY_LUA via EVALSHA with automatic load-on-first-use and
+    a single NOSCRIPT retry (covers Redis restarts that flush the script cache).
+    Falls back to plain EVAL if EVALSHA fails twice.
+    """
+    global _JOIN_LOBBY_SHA
+
+    args = (lobby_key, GEO_KEY, lobby_id, user_id, settings.lobby_ttl_seconds)
+
+    if _JOIN_LOBBY_SHA is None:
+        _JOIN_LOBBY_SHA = await redis_client.script_load(JOIN_LOBBY_LUA)
+        log.debug("JOIN_LOBBY_LUA loaded, sha=%s", _JOIN_LOBBY_SHA)
+
+    try:
+        return await redis_client.evalsha(_JOIN_LOBBY_SHA, 2, *args)
+    except aioredis.exceptions.NoScriptError:
+        log.warning("NOSCRIPT: reloading JOIN_LOBBY_LUA")
+        _JOIN_LOBBY_SHA = await redis_client.script_load(JOIN_LOBBY_LUA)
+        try:
+            return await redis_client.evalsha(_JOIN_LOBBY_SHA, 2, *args)
+        except aioredis.exceptions.NoScriptError:
+            log.error("EVALSHA failed twice; falling back to EVAL")
+            _JOIN_LOBBY_SHA = None
+            return await redis_client.eval(JOIN_LOBBY_LUA, 2, *args)
+
+
 async def find_or_create_lobby(
     redis_client: aioredis.Redis,
     user_id: str,
@@ -53,8 +96,10 @@ async def find_or_create_lobby(
     Returns a dict with keys: lobby_id, status ('waiting'|'matched'), members list.
     """
     # Search for compatible lobbies within radius
-    nearby = await redis_client.georadius(
-        GEO_KEY, lon, lat, radius_meters, unit="m",
+    nearby = await redis_client.geosearch(
+        GEO_KEY,
+        longitude=lon, latitude=lat,
+        radius=radius_meters, unit="m",
         withcoord=True, withdist=True, sort="ASC",
     )
 
@@ -66,11 +111,7 @@ async def find_or_create_lobby(
             continue
 
         # Attempt atomic join
-        result = await redis_client.eval(
-            JOIN_LOBBY_LUA, 2,
-            lobby_key, GEO_KEY,
-            candidate_id, user_id, settings.lobby_ttl_seconds,
-        )
+        result = await _eval_join_lobby(redis_client, lobby_key, candidate_id, user_id)
         status_str, new_count = result
 
         if status_str in ("joined", "matched"):
@@ -130,8 +171,10 @@ async def get_nearby_lobbies(
     lon: float,
     radius_meters: int,
 ) -> list[dict]:
-    nearby = await redis_client.georadius(
-        GEO_KEY, lon, lat, radius_meters, unit="m",
+    nearby = await redis_client.geosearch(
+        GEO_KEY,
+        longitude=lon, latitude=lat,
+        radius=radius_meters, unit="m",
         withcoord=True, withdist=True, sort="ASC",
     )
     lobbies = []

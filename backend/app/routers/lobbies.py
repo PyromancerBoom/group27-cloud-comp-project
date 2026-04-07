@@ -2,8 +2,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from app.dependencies import get_redis
-from app.config import settings
-from app.services.matching import GEO_KEY, JOIN_LOBBY_LUA
+from app.services.matching import GEO_KEY, _eval_join_lobby
 from app.services import chat as chat_service
 from app.services.connection_manager import manager
 
@@ -39,11 +38,7 @@ async def join_lobby(lobby_id: str, body: JoinRequest, redis=Depends(get_redis))
         raise HTTPException(404, "Lobby not found or expired")
     if creator_id == body.user_id:
         raise HTTPException(403, "Cannot join your own ping")
-    result = await redis.eval(
-        JOIN_LOBBY_LUA, 2,
-        lobby_key, GEO_KEY,
-        lobby_id, body.user_id, settings.lobby_ttl_seconds,
-    )
+    result = await _eval_join_lobby(redis, lobby_key, lobby_id, body.user_id)
     status_str, new_count = result
     if status_str == "not_found":
         raise HTTPException(404, "Lobby not found or expired")
