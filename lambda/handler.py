@@ -52,6 +52,8 @@ def lambda_handler(event, context):
 
     for record in event.get("Records", []):
         payload = json.loads(base64.b64decode(record["kinesis"]["data"]).decode())
+        print("PAYLOAD:", json.dumps(payload))
+
         lat = payload["location"]["lat"]
         lon = payload["location"]["lon"]
         pk = f"{_venue_cell(lat, lon)}#{payload['activity_type']}"
