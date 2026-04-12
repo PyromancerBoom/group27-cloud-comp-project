@@ -164,7 +164,15 @@ export default function App() {
   const totalPings = chartData.reduce((s, d) => s + d.ping_count, 0);
   const totalMatches = chartData.reduce((s, d) => s + d.match_count, 0);
   const matchRate = totalPings > 0 ? (totalMatches / totalPings) * 100 : 0;
-  const activeHours = chartData.filter((d) => d.ping_count > 0).length;
+  const peakHour = (() => {
+    if (chartData.length === 0) return "—";
+    const top = chartData.reduce((a, b) => (b.ping_count > a.ping_count ? b : a));
+    if (top.ping_count === 0) return "—";
+    const h = parseInt(top.hour.slice(0, 2), 10);
+    if (h === 0) return "12am";
+    if (h === 12) return "12pm";
+    return h < 12 ? `${h}am` : `${h - 12}pm`;
+  })();
 
   return (
     <>
@@ -222,23 +230,24 @@ export default function App() {
               totalPings={totalPings}
               totalMatches={totalMatches}
               matchRate={matchRate}
-              activeHours={activeHours}
+              peakHour={peakHour}
             />
 
-            {/* CHARTS ROW */}
-            <div className="charts-row">
+            {/* PING VOLUME (full width) */}
+            <div style={{ marginBottom: 16 }}>
               <PingVolumeChart data={chartData} />
-              <MatchRateChart data={matchRateData} />
             </div>
 
-            {/* BOTTOM ROW */}
-            <div className="bottom-row">
+            {/* HEATMAP + ACTIVITY BREAKDOWN */}
+            <div className="charts-row">
+              <ActivityHeatmap grid={heatmapGrid} />
               <ActivityBreakdown data={activityData} />
+            </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <ActivityHeatmap grid={heatmapGrid} />
-                <LiveFeed items={feedItems} />
-              </div>
+            {/* MATCH RATE + LIVE FEED */}
+            <div className="bottom-row">
+              <MatchRateChart data={matchRateData} />
+              <LiveFeed items={feedItems} />
             </div>
           </>
         )}
