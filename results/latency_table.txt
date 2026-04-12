@@ -1,0 +1,15 @@
+
+Endpoint                  VUs       n    p50 ms    p95 ms    p99 ms
+--------------------------------------------------------------------
+POST /pings               100    2942      19.7      28.1      77.1
+POST /pings               500    2971      19.6      30.6      77.6
+POST /pings              1000    2942      19.8      29.1      87.8
+POST /pings              2000    2961      19.6      32.9     113.6
+GET /pings/nearby         100    2949       8.4      13.0      23.8
+GET /pings/nearby         500    2965       8.4      13.2      22.7
+GET /pings/nearby        1000    2943       8.4      13.1      31.4
+GET /pings/nearby        2000    2959       8.5      14.4      76.5
+
+WS connect                all    2171      16.2      29.6      92.7
+
+E2E match                 all     570      23.0      33.0     116.0

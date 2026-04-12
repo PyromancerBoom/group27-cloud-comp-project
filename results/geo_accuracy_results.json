@@ -1,0 +1,129 @@
+{
+  "base_url": "http://need-a-sidekick-dev-alb-474128798.ap-southeast-1.elb.amazonaws.com",
+  "summary": {
+    "passed": 9,
+    "failed": 0,
+    "total": 9,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "cases": [
+    {
+      "name": "within_5m",
+      "description": "5 m apart, 10 m radius, same activity \u2192 should match",
+      "distance_m": 5,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "chess",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "within_8m",
+      "description": "8 m apart, 10 m radius, same activity \u2192 should match",
+      "distance_m": 8,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "chess",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "boundary_10m",
+      "description": "10 m apart, 10 m radius (boundary) \u2192 should match (\u2264 radius)",
+      "distance_m": 10,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "chess",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "outside_15m",
+      "description": "15 m apart, 10 m radius \u2192 outside fence, should NOT match",
+      "distance_m": 15,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "chess",
+      "expected": "waiting",
+      "actual_a": "waiting",
+      "actual_b": "waiting",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "outside_50m",
+      "description": "50 m apart, 10 m radius \u2192 far outside, should NOT match",
+      "distance_m": 50,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "chess",
+      "expected": "waiting",
+      "actual_a": "waiting",
+      "actual_b": "waiting",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "radius_25m_match",
+      "description": "20 m apart, 25 m radius \u2192 inside wider fence, should match",
+      "distance_m": 20,
+      "radius": 25,
+      "activity_a": "badminton",
+      "activity_b": "badminton",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "radius_50m_match",
+      "description": "45 m apart, 50 m radius \u2192 inside wider fence, should match",
+      "distance_m": 45,
+      "radius": 50,
+      "activity_a": "gym_spotter",
+      "activity_b": "gym_spotter",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "diff_activity_no_match",
+      "description": "5 m apart but DIFFERENT activity \u2192 must NOT cross-match",
+      "distance_m": 5,
+      "radius": 10,
+      "activity_a": "chess",
+      "activity_b": "badminton",
+      "expected": "waiting",
+      "actual_a": "waiting",
+      "actual_b": "waiting",
+      "passed": true,
+      "error": null
+    },
+    {
+      "name": "overlapping_lobby_same_activity",
+      "description": "Overlapping locations, same activity \u2192 should match correct lobby",
+      "distance_m": 3,
+      "radius": 10,
+      "activity_a": "table_tennis",
+      "activity_b": "table_tennis",
+      "expected": "matched",
+      "actual_a": "waiting",
+      "actual_b": "matched",
+      "passed": true,
+      "error": null
+    }
+  ]
+}
