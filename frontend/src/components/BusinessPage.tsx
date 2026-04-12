@@ -162,14 +162,116 @@ export function BusinessPage(_: BusinessPageProps) {
                 <div className="biz-preview-stat-sub">busiest hour</div>
               </div>
             </div>
-            <div className="biz-preview-chart">
-              {[30,25,40,35,50,45,55,60,70,65,85,90,95,100,88,75,60,50,40,35,25,20,15,12].map((h, i) => (
-                <div
-                  key={i}
-                  className={`biz-chart-bar ${i % 4 === 0 ? "a" : "g"}`}
-                  style={{ height: `${h}%` }}
-                ></div>
-              ))}
+            <div className="biz-preview-card biz-preview-chart-card">
+              <h3 className="biz-preview-card-title">Ping &amp; Match Volume</h3>
+              <p className="biz-preview-card-sub">Hourly activity over selected period</p>
+              <div className="biz-preview-chart">
+                {[30,25,40,35,50,45,55,60,70,65,85,90,95,100,88,75,60,50,40,35,25,20,15,12].map((h, i) => {
+                  const hour = `${String(i).padStart(2, "0")}:00`;
+                  const pings = Math.round(h * 12);
+                  const matches = Math.round(pings * 0.668);
+                  return (
+                    <div
+                      key={i}
+                      className="biz-chart-bar g"
+                      style={{ height: `${h}%` }}
+                    >
+                      <div className="biz-chart-tooltip">
+                        <div className="biz-chart-tooltip-hour">{hour}</div>
+                        <div className="biz-chart-tooltip-row">
+                          <span className="biz-chart-tooltip-dot g"></span>
+                          <span>{pings} pings</span>
+                        </div>
+                        <div className="biz-chart-tooltip-row">
+                          <span className="biz-chart-tooltip-dot a"></span>
+                          <span>{matches} matches</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="biz-preview-split">
+            {/* Activity Heatmap */}
+            <div className="biz-preview-card biz-preview-heatmap">
+              <h3 className="biz-preview-card-title">Activity Heatmap</h3>
+              <p className="biz-preview-card-sub">Ping density by day and time slot</p>
+              <div className="biz-heatmap-grid">
+                <div className="biz-heatmap-corner"></div>
+                {["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => (
+                  <div key={d} className="biz-heatmap-day">{d}</div>
+                ))}
+                {[
+                  { label: "06:00", vals: [0,0,1,0,0,1,1] },
+                  { label: "09:00", vals: [1,1,2,1,2,2,1] },
+                  { label: "12:00", vals: [2,2,3,2,3,4,3] },
+                  { label: "14:00", vals: [2,3,3,3,4,4,3] },
+                  { label: "17:00", vals: [3,3,4,4,5,5,4] },
+                  { label: "20:00", vals: [2,2,3,3,4,5,3] },
+                ].map(row => {
+                  const days = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+                  return (
+                    <React.Fragment key={row.label}>
+                      <div className="biz-heatmap-time">{row.label}</div>
+                      {row.vals.map((v, i) => {
+                        const pings = v * 14 + Math.round(v * 3.5);
+                        return (
+                          <div key={i} className={`biz-heatmap-cell l${v}`}>
+                            <div className="biz-heatmap-tooltip">
+                              <div className="biz-heatmap-tooltip-head">{days[i]} · {row.label}</div>
+                              <div className="biz-heatmap-tooltip-row">
+                                <span className="biz-chart-tooltip-dot g"></span>
+                                <span>{pings} pings</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+              <div className="biz-heatmap-legend">
+                <span>less</span>
+                <div className="biz-heatmap-cell l0"></div>
+                <div className="biz-heatmap-cell l1"></div>
+                <div className="biz-heatmap-cell l2"></div>
+                <div className="biz-heatmap-cell l3"></div>
+                <div className="biz-heatmap-cell l4"></div>
+                <div className="biz-heatmap-cell l5"></div>
+                <span>more</span>
+              </div>
+            </div>
+
+            {/* Live Feed */}
+            <div className="biz-preview-card biz-preview-feed">
+              <div className="biz-preview-feed-head">
+                <div>
+                  <h3 className="biz-preview-card-title">Live Feed</h3>
+                  <p className="biz-preview-card-sub">Recent platform activity</p>
+                </div>
+                <div className="biz-live-pill">
+                  <span className="biz-live-dot"></span>live
+                </div>
+              </div>
+              <div className="biz-feed-list">
+                {[
+                  { c: "g", text: "ping-pong @ Clementi Mall", time: "2m ago" },
+                  { c: "a", text: "sponsored ping matched", time: "5m ago" },
+                  { c: "g", text: "badminton @ Bukit Timah", time: "8m ago" },
+                  { c: "p", text: "coffee chat · Holland V", time: "12m ago" },
+                  { c: "g", text: "study group @ NUS Central", time: "18m ago" },
+                ].map((item, i) => (
+                  <div key={i} className="biz-feed-item">
+                    <div className={`biz-feed-dot ${item.c}`}></div>
+                    <span className="biz-feed-text">{item.text}</span>
+                    <span className="biz-feed-time">{item.time}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
             </div>
           </div>
         </div>
@@ -244,26 +346,26 @@ export function BusinessPage(_: BusinessPageProps) {
                   <input type="text" placeholder="103.8198" disabled />
                 </div>
               </div>
-              <div className="biz-form-row">
-                <label>Broadcast Radius</label>
-                <div className="biz-slider-wrap">
-                  <input type="range" min={10} max={100} defaultValue={100} disabled />
-                  <span className="biz-slider-val">100<span>m</span></span>
+              <div className="biz-form-linear">
+                <div className="biz-form-linear-item">
+                  <label>Broadcast Radius</label>
+                  <div className="biz-slider-wrap">
+                    <input type="range" min={10} max={100} defaultValue={100} disabled />
+                    <span className="biz-slider-val">100<span>m</span></span>
+                  </div>
                 </div>
-              </div>
-              <div className="biz-form-row">
-                <label>Ping Duration</label>
-                <div className="biz-duration-picker">
-                  <button className="biz-dur-btn" disabled>12 hours</button>
-                  <button className="biz-dur-btn active" disabled>24 hours</button>
-                  <button className="biz-dur-btn" disabled>3 days</button>
-                  <button className="biz-dur-btn" disabled>7 days</button>
+                <div className="biz-form-linear-item">
+                  <label>Ping Duration</label>
+                  <div className="biz-duration-picker">
+                    <button className="biz-dur-btn" disabled>12h</button>
+                    <button className="biz-dur-btn active" disabled>24h</button>
+                    <button className="biz-dur-btn" disabled>3d</button>
+                    <button className="biz-dur-btn" disabled>7d</button>
+                  </div>
                 </div>
-              </div>
-              <div className="biz-form-row" style={{ marginTop: 8 }}>
-                <div className="biz-price-summary">
-                  <span>Total</span>
-                  <span className="biz-price-total">$8</span>
+                <div className="biz-form-linear-item biz-form-linear-total">
+                  <label>Total</label>
+                  <div className="biz-price-total">$8</div>
                 </div>
               </div>
               <div className="biz-live-preview-wrap">
