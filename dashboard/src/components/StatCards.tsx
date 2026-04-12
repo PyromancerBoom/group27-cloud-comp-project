@@ -4,10 +4,11 @@ interface Props {
   totalPings: number;
   totalMatches: number;
   matchRate: number;
-  activeHours: number;
+  peakHour: string;
 }
 
-export function StatCards({ totalPings, totalMatches, matchRate, activeHours }: Props) {
+export function StatCards({ totalPings, totalMatches, matchRate, peakHour }: Props) {
+  const peakMatch = peakHour.match(/^(\d+)(am|pm)$/i);
   return (
     <div className="stats-grid">
       <div className="stat-card">
@@ -59,7 +60,7 @@ export function StatCards({ totalPings, totalMatches, matchRate, activeHours }: 
 
       <div className="stat-card">
         <div className="stat-card-header">
-          <span className="stat-card-label">Active Hours</span>
+          <span className="stat-card-label">Peak Hours</span>
           <div className="stat-card-icon g">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="12" r="8" stroke="#9FE1CB" strokeWidth="1.5" fill="none" />
@@ -68,10 +69,14 @@ export function StatCards({ totalPings, totalMatches, matchRate, activeHours }: 
           </div>
         </div>
         <div className="stat-card-value">
-          {activeHours}<span className="unit">h</span>
+          {peakMatch ? (
+            <>{peakMatch[1]}<span className="unit">{peakMatch[2].toLowerCase()}</span></>
+          ) : (
+            peakHour
+          )}
         </div>
         <div className="stat-card-footer">
-          <span className="stat-period">with activity</span>
+          <span className="stat-period">busiest hour</span>
         </div>
       </div>
     </div>
