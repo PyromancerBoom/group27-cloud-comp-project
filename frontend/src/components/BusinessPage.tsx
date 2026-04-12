@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo, useState } from "react";
 
 interface BusinessPageProps {
   onScrollToId?: (id: string) => void;
@@ -8,7 +8,41 @@ function scrollToId(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
 }
 
+const CATEGORIES = [
+  { value: "gym_spotter",  label: "Gym Spotter" },
+  { value: "table_tennis", label: "Table Tennis" },
+  { value: "board_game",   label: "Board Games" },
+  { value: "badminton",    label: "Badminton" },
+  { value: "chess",        label: "Chess" },
+  { value: "running",      label: "Running / Jogging" },
+  { value: "other",        label: "Other" },
+];
+
+const DURATIONS = [
+  { value: "12h", label: "12h", hours: 12,  price: 5 },
+  { value: "24h", label: "24h", hours: 24,  price: 8 },
+  { value: "3d",  label: "3d",  hours: 72,  price: 15 },
+  { value: "7d",  label: "7d",  hours: 168, price: 30 },
+];
+
+function categoryLabel(v: string): string {
+  return CATEGORIES.find((c) => c.value === v)?.label ?? "Activity Category";
+}
+
 export function BusinessPage(_: BusinessPageProps) {
+  const [businessName, setBusinessName] = useState("");
+  const [category, setCategory] = useState("");
+  const [message, setMessage] = useState("");
+  const [lat, setLat] = useState("");
+  const [lon, setLon] = useState("");
+  const [radius, setRadius] = useState(100);
+  const [duration, setDuration] = useState("24h");
+
+  const selectedDuration = useMemo(
+    () => DURATIONS.find((d) => d.value === duration) ?? DURATIONS[1],
+    [duration]
+  );
+
   return (
     <div className="biz-page">
       {/* ── HERO ── */}
@@ -316,16 +350,28 @@ export function BusinessPage(_: BusinessPageProps) {
 
           {/* RIGHT: form preview + live preview */}
           <div className="biz-ping-preview-right">
-            <div className="biz-form-container biz-preview-locked">
+            <div className="biz-form-container">
               <div className="biz-form-row-split">
                 <div className="biz-form-row">
                   <label>Business Name</label>
-                  <input type="text" placeholder="e.g. GameHaven Cafe" disabled />
+                  <input
+                    type="text"
+                    placeholder="e.g. GameHaven Cafe"
+                    value={businessName}
+                    onChange={(e) => setBusinessName(e.target.value)}
+                    maxLength={60}
+                  />
                 </div>
                 <div className="biz-form-row">
                   <label>Activity Category</label>
-                  <select disabled defaultValue="">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
                     <option value="">Select category...</option>
+                    {CATEGORIES.map((c) => (
+                      <option key={c.value} value={c.value}>{c.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -333,39 +379,65 @@ export function BusinessPage(_: BusinessPageProps) {
                 <label>Ping Message</label>
                 <textarea
                   placeholder="e.g. 2 open tables available — 10% off for Sidekick users!"
-                  disabled
-                ></textarea>
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  maxLength={160}
+                />
               </div>
               <div className="biz-form-row-split">
                 <div className="biz-form-row">
                   <label>Latitude</label>
-                  <input type="text" placeholder="1.3521" disabled />
+                  <input
+                    type="text"
+                    placeholder="1.3521"
+                    value={lat}
+                    onChange={(e) => setLat(e.target.value)}
+                    inputMode="decimal"
+                  />
                 </div>
                 <div className="biz-form-row">
                   <label>Longitude</label>
-                  <input type="text" placeholder="103.8198" disabled />
+                  <input
+                    type="text"
+                    placeholder="103.8198"
+                    value={lon}
+                    onChange={(e) => setLon(e.target.value)}
+                    inputMode="decimal"
+                  />
                 </div>
               </div>
               <div className="biz-form-linear">
                 <div className="biz-form-linear-item">
                   <label>Broadcast Radius</label>
                   <div className="biz-slider-wrap">
-                    <input type="range" min={10} max={100} defaultValue={100} disabled />
-                    <span className="biz-slider-val">100<span>m</span></span>
+                    <input
+                      type="range"
+                      min={10}
+                      max={100}
+                      value={radius}
+                      onChange={(e) => setRadius(+e.target.value)}
+                    />
+                    <span className="biz-slider-val">{radius}<span>m</span></span>
                   </div>
                 </div>
                 <div className="biz-form-linear-item">
                   <label>Ping Duration</label>
                   <div className="biz-duration-picker">
-                    <button className="biz-dur-btn" disabled>12h</button>
-                    <button className="biz-dur-btn active" disabled>24h</button>
-                    <button className="biz-dur-btn" disabled>3d</button>
-                    <button className="biz-dur-btn" disabled>7d</button>
+                    {DURATIONS.map((d) => (
+                      <button
+                        key={d.value}
+                        type="button"
+                        className={`biz-dur-btn${duration === d.value ? " active" : ""}`}
+                        onClick={() => setDuration(d.value)}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
                   </div>
                 </div>
                 <div className="biz-form-linear-item biz-form-linear-total">
                   <label>Total</label>
-                  <div className="biz-price-total">$8</div>
+                  <div className="biz-price-total">${selectedDuration.price}</div>
                 </div>
               </div>
               <div className="biz-live-preview-wrap">
@@ -373,13 +445,16 @@ export function BusinessPage(_: BusinessPageProps) {
                 <div className="biz-ping-mock-card">
                   <div className="biz-ping-mock-header">
                     <span className="biz-ping-mock-badge">sponsored</span>
-                    <span className="biz-ping-mock-activity">Activity Category</span>
+                    <span className="biz-ping-mock-activity">
+                      {category ? categoryLabel(category) : "Activity Category"}
+                    </span>
                   </div>
                   <div className="biz-ping-mock-msg">
-                    your message will appear here
+                    {message.trim() || "your message will appear here"}
                   </div>
                   <div className="biz-ping-mock-meta">
-                    <span>Your Business Name</span> · 30m away · 24h remaining
+                    <span>{businessName.trim() || "Your Business Name"}</span>
+                    {" · 30m away · "}{selectedDuration.label} remaining
                   </div>
                 </div>
               </div>

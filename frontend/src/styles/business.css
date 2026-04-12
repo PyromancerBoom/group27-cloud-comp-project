@@ -684,21 +684,28 @@
   margin-bottom: 8px;
 }
 .biz-page .biz-form-linear-total {
-  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-2);
+  border: 0.5px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 22px 28px;
+}
+.biz-page .biz-form-linear-total label {
+  margin-bottom: 0;
 }
 .biz-page .biz-form-linear-total .biz-price-total {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--accent);
   line-height: 1;
-  padding: 6px 0 4px;
 }
 @media (max-width: 880px) {
   .biz-page .biz-form-linear {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  .biz-page .biz-form-linear-total { text-align: left; }
 }
 
 /* ── SLIDER ── */
