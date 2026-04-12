@@ -4,13 +4,26 @@ import { LobbyList } from "./components/LobbyList";
 import { NearbyPage } from "./components/NearbyPage";
 import { ChatRoom, ChatMessage } from "./components/ChatRoom";
 import { PingDetailModal } from "./components/PingDetailModal";
+import { BusinessPage } from "./components/BusinessPage";
 import { useGeolocation } from "./hooks/useGeolocation";
 import { useWebSocket } from "./hooks/useWebSocket";
 import { getNearbyPings, getLobby, deleteLobby } from "./api/client";
 
 const USER_ID = crypto.randomUUID?.() ?? Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
 
-type Page = "home" | "nearby";
+type Page = "home" | "nearby" | "business";
+
+function pathToPage(path: string): Page {
+  if (path.startsWith("/business")) return "business";
+  if (path.startsWith("/nearby")) return "nearby";
+  return "home";
+}
+
+function pageToPath(p: Page): string {
+  if (p === "business") return "/business";
+  if (p === "nearby") return "/nearby";
+  return "/";
+}
 
 export default function App() {
   const { coords, error: geoError } = useGeolocation();
@@ -18,7 +31,7 @@ export default function App() {
   const [activeLobbyId, setActiveLobbyId] = useState<string | null>(null);
   const [showPingModal, setShowPingModal] = useState(false);
   const [pingBlockedMsg, setPingBlockedMsg] = useState(false);
-  const [page, setPage] = useState<Page>("home");
+  const [page, setPage] = useState<Page>(() => pathToPage(window.location.pathname));
   const [chatLobbyId, setChatLobbyId] = useState<string | null>(null);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [selectedLobby, setSelectedLobby] = useState<any | null>(null);
@@ -125,8 +138,23 @@ export default function App() {
   const locState = geoError ? "error" : coords ? "ready" : "locating";
   const locText = geoError ? "location unavailable" : coords ? "live · hyper-local · 10m radius" : "locating you...";
 
-  const openNearby = () => setPage("nearby");
-  const openHome = () => setPage("home");
+  const navigate = useCallback((p: Page) => {
+    const path = pageToPath(p);
+    if (window.location.pathname !== path) {
+      window.history.pushState({ page: p }, "", path);
+    }
+    setPage(p);
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => setPage(pathToPage(window.location.pathname));
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  const openNearby = () => navigate("nearby");
+  const openHome = () => navigate("home");
+  const openBusiness = () => navigate("business");
 
   return (
     <>
@@ -146,6 +174,7 @@ export default function App() {
             <button className={`nav-link${page === "home" ? " active" : ""}`} onClick={openHome}>home</button>
             <button className="nav-link" onClick={() => document.getElementById("how")?.scrollIntoView({ behavior: "smooth" })}>how it works</button>
             <button className="nav-link" onClick={() => { openHome(); setTimeout(() => document.getElementById("activities")?.scrollIntoView({ behavior: "smooth" }), 50); }}>activities</button>
+            <button className={`nav-link${page === "business" ? " active" : ""}`} onClick={openBusiness}>for business</button>
           </div>
           <button className="nav-cta" onClick={openNearby}>
             find a sidekick
@@ -165,6 +194,10 @@ export default function App() {
             onDelete={handleDeleteLobby}
             onOpenPingForm={handleOpenPingForm}
           />
+        </div>
+      ) : page === "business" ? (
+        <div className="page">
+          <BusinessPage />
         </div>
       ) : (
         <div className="page">
