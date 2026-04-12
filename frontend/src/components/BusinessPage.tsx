@@ -37,6 +37,7 @@ export function BusinessPage(_: BusinessPageProps) {
   const [lon, setLon] = useState("");
   const [radius, setRadius] = useState(100);
   const [duration, setDuration] = useState("24h");
+  const [activePlan, setActivePlan] = useState<"sponsored" | "pro">("pro");
 
   const selectedDuration = useMemo(
     () => DURATIONS.find((d) => d.value === duration) ?? DURATIONS[1],
@@ -507,8 +508,12 @@ export function BusinessPage(_: BusinessPageProps) {
         </h2>
         <div className="biz-pricing-grid">
           {/* Sponsored Ping (Pay Per Use) */}
-          <div className="biz-pricing-card">
-            <div className="biz-pricing-badge amber">business</div>
+          <div
+            className={`biz-pricing-card${activePlan === "sponsored" ? " featured" : ""}`}
+            onClick={() => setActivePlan("sponsored")}
+            style={{ cursor: "pointer" }}
+          >
+            <div className={`biz-pricing-badge ${activePlan === "sponsored" ? "green" : "amber"}`}>business</div>
             <h3>Sponsored Ping</h3>
             <div className="biz-price-tag">
               <span className="biz-price-prefix">from</span> $5{" "}
@@ -519,20 +524,27 @@ export function BusinessPage(_: BusinessPageProps) {
               real-time. Pay only for what you post.
             </p>
             <ul className="biz-pricing-features">
-              <li><div className="biz-check a">✓</div>Broadcast to nearby users</li>
-              <li><div className="biz-check a">✓</div>Up to 100m broadcast radius</li>
-              <li><div className="biz-check a">✓</div>Long-lived — hours, days, or weeks</li>
-              <li><div className="biz-check a">✓</div>Custom business name &amp; message</li>
-              <li><div className="biz-check a">✓</div>Choose any location in Singapore</li>
+              <li><div className={`biz-check ${activePlan === "sponsored" ? "g" : "a"}`}>✓</div>Broadcast to nearby users</li>
+              <li><div className={`biz-check ${activePlan === "sponsored" ? "g" : "a"}`}>✓</div>Up to 100m broadcast radius</li>
+              <li><div className={`biz-check ${activePlan === "sponsored" ? "g" : "a"}`}>✓</div>Long-lived — hours, days, or weeks</li>
+              <li><div className={`biz-check ${activePlan === "sponsored" ? "g" : "a"}`}>✓</div>Custom business name &amp; message</li>
+              <li><div className={`biz-check ${activePlan === "sponsored" ? "g" : "a"}`}>✓</div>Choose any location in Singapore</li>
             </ul>
-            <button className="biz-btn-secondary" onClick={() => scrollToId("biz-pricing")}>
+            <button
+              className={activePlan === "sponsored" ? "biz-btn-primary" : "biz-btn-secondary"}
+              onClick={(e) => { e.stopPropagation(); scrollToId("biz-pricing"); }}
+            >
               create a sponsored ping
             </button>
           </div>
 
           {/* Subscription */}
-          <div className="biz-pricing-card featured">
-            <div className="biz-pricing-badge green">subscription</div>
+          <div
+            className={`biz-pricing-card${activePlan === "pro" ? " featured" : ""}`}
+            onClick={() => setActivePlan("pro")}
+            style={{ cursor: "pointer" }}
+          >
+            <div className={`biz-pricing-badge ${activePlan === "pro" ? "green" : "amber"}`}>subscription</div>
             <h3>Business Pro</h3>
             <div className="biz-price-tag">
               $49 <span>/ month</span>
@@ -543,15 +555,18 @@ export function BusinessPage(_: BusinessPageProps) {
               local reach.
             </p>
             <ul className="biz-pricing-features">
-              <li><div className="biz-check g">✓</div>Community Pulse dashboard access</li>
-              <li><div className="biz-check g">✓</div>Unlimited sponsored pings</li>
-              <li><div className="biz-check g">✓</div>Up to 100m broadcast radius</li>
-              <li><div className="biz-check g">✓</div>Advanced analytics &amp; heatmaps</li>
-              <li><div className="biz-check g">✓</div>Scheduled ping automation</li>
-              <li><div className="biz-check g">✓</div>Impression &amp; click-through tracking</li>
-              <li><div className="biz-check g">✓</div>Priority support</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Community Pulse dashboard access</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Unlimited sponsored pings</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Up to 100m broadcast radius</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Advanced analytics &amp; heatmaps</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Scheduled ping automation</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Impression &amp; click-through tracking</li>
+              <li><div className={`biz-check ${activePlan === "pro" ? "g" : "a"}`}>✓</div>Priority support</li>
             </ul>
-            <button className="biz-btn-primary" onClick={() => scrollToId("biz-pricing")}>
+            <button
+              className={activePlan === "pro" ? "biz-btn-primary" : "biz-btn-secondary"}
+              onClick={(e) => { e.stopPropagation(); scrollToId("biz-pricing"); }}
+            >
               subscribe now
             </button>
           </div>
