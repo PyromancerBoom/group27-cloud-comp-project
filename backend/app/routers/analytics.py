@@ -30,5 +30,13 @@ async def get_summary(
         kwargs["FilterExpression"] = " AND ".join(filter_parts)
         kwargs["ExpressionAttributeValues"] = expr_values
 
-    resp = table.scan(**kwargs)
-    return {"items": resp.get("Items", []), "count": resp.get("Count", 0)}
+    items = []
+    while True:
+        resp = table.scan(**kwargs)
+        items.extend(resp.get("Items", []))
+        last = resp.get("LastEvaluatedKey")
+        if not last:
+            break
+        kwargs["ExclusiveStartKey"] = last
+
+    return {"items": items, "count": len(items)}
