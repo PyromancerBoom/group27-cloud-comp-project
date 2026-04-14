@@ -29,6 +29,12 @@ function filterByPeriod(items: any[], period: Period): any[] {
   });
 }
 
+function parseHourBucket(dateStr: string): Date | null {
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2})$/);
+  if (!m) return null;
+  return new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4]));
+}
+
 function transformToChartData(items: any[]) {
   const byHour: Record<string, { ping_count: number; match_count: number }> = {};
   for (const item of items) {
@@ -73,10 +79,10 @@ function transformToHeatmapGrid(items: any[]): number[][] {
 
   for (const item of items) {
     const dateStr = (item.sk as string).replace("HOUR#", "");
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) continue;
-    const dayOfWeek = (date.getDay() + 6) % 7; // Mon=0
-    const hour = date.getHours();
+    const date = parseHourBucket(dateStr);
+    if (!date) continue;
+    const dayOfWeek = (date.getUTCDay() + 6) % 7; // Mon=0
+    const hour = date.getUTCHours();
 
     let slotIdx = 0;
     for (let i = slotBounds.length - 1; i >= 0; i--) {
@@ -95,7 +101,9 @@ const ACTIVITY_DISPLAY: Record<string, string> = {
 };
 
 function formatRelativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
+  const date = parseHourBucket(dateStr);
+  if (!date) return "";
+  const diff = Date.now() - date.getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return "just now";
   if (mins < 60) return `${mins}m ago`;
