@@ -204,13 +204,13 @@ export function BusinessPage(_: BusinessPageProps) {
                 {[30,25,40,35,50,45,55,60,70,65,85,90,95,100,88,75,60,50,40,35,25,20,15,12].map((h, i) => {
                   const hour = `${String(i).padStart(2, "0")}:00`;
                   const pings = Math.round(h * 12);
-                  const matches = Math.round(pings * 0.668);
+                  const matchRatio = 0.668;
+                  const matches = Math.round(pings * matchRatio);
+                  const matchH = h * matchRatio;
                   return (
-                    <div
-                      key={i}
-                      className="biz-chart-bar g"
-                      style={{ height: `${h}%` }}
-                    >
+                    <div key={i} className="biz-chart-group">
+                      <div className="biz-chart-bar g" style={{ height: `${h}%` }} />
+                      <div className="biz-chart-bar a" style={{ height: `${matchH}%` }} />
                       <div className="biz-chart-tooltip">
                         <div className="biz-chart-tooltip-hour">{hour}</div>
                         <div className="biz-chart-tooltip-row">

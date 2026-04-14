@@ -21,7 +21,7 @@ interface Props {
 export function PingForm({ userId, coords, onPingCreated, onClose }: Props) {
   const [activity, setActivity] = useState(ACTIVITY_TYPES[0].value);
   const [message, setMessage] = useState("");
-  const [radius, setRadius] = useState(50);
+  const [radius, setRadius] = useState(10);
   const [capacity, setCapacity] = useState(2);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +93,7 @@ export function PingForm({ userId, coords, onPingCreated, onClose }: Props) {
             </div>
             <input
               type="range" className="form-range"
-              min={5} max={100} value={radius}
+              min={5} max={10} value={radius}
               onChange={(e) => setRadius(+e.target.value)}
             />
           </div>

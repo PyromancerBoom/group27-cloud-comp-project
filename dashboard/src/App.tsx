@@ -38,7 +38,7 @@ function parseHourBucket(dateStr: string): Date | null {
 function transformToChartData(items: any[]) {
   const byHour: Record<string, { ping_count: number; match_count: number }> = {};
   for (const item of items) {
-    const hour = (item.sk as string).replace("HOUR#", "").slice(11, 16);
+    const hour = (item.sk as string).replace("HOUR#", "").slice(11, 13) + ":00";
     if (!byHour[hour]) byHour[hour] = { ping_count: 0, match_count: 0 };
     byHour[hour].ping_count += Number(item.ping_count ?? 0);
     byHour[hour].match_count += Number(item.match_count ?? 0);
